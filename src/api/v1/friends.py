@@ -5,7 +5,6 @@ from typing import Union
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import NoResultFound
-from starlette.responses import JSONResponse
 
 from api.v1.auth.auth_bearer import BaseJWTBearer
 from api.v1.models.friends import AllFriendsDataResp, FriendReq, FriendResp
@@ -50,8 +49,6 @@ async def delete_friend(
         token: str = Depends(BaseJWTBearer()),
         friends_service: FriendsService = Depends(get_friends_service)
 ) -> Union[JSONResponse, FriendResp]:
-
-    logging.warning(f'token: {token}')
     try:
         await friends_service.delete_friend(token=token, friend_id=friend_id)
     except NoResultFound:

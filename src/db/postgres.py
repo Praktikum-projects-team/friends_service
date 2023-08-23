@@ -4,7 +4,6 @@ from sqlalchemy import delete
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.future import select
-from sqlalchemy.orm import exc as orm_exc
 
 from core.config import pg_config
 from db.models_data import FriendsData
@@ -25,7 +24,7 @@ async def insert_friend_db(friends_data: FriendsData, session):
         session.add(friend)
         await session.commit()
         await session.refresh(friend)
-        logging.info(f'friend.id: {friend.id}')
+
         return friend.id
 
     except IntegrityError:
@@ -57,15 +56,15 @@ async def delete_friend_db(friends_data: FriendsData, session):
 async def get_all_friend_ids_for_user_db(user_id: str, session):
     try:
         query = select(Friends.friend_id).where(Friends.user_id == user_id)
-        friends = await session.execute(query).fetchall()
-        friend_ids = [friend[0] for friend in friends]
-
-        logging.warning(f'friend_ids: {friend_ids}')
+        result = await session.execute(query)
+        friends = result.fetchall()
+        friend_ids = [str(friend[0]) for friend in friends]
 
         return friend_ids
 
     except Exception as e:
         logging.error(e)
+
         return None
 
 
@@ -75,14 +74,11 @@ async def get_friend_by_ids(friends_data: FriendsData, session):
             Friends.user_id == friends_data.user_id,
             Friends.friend_id == friends_data.friend_id
         )
-        logging.warning(f'friends_data: {friends_data}')
         result = await session.execute(query)
         friend = result.fetchone()
 
         if friend is None:
             raise NoResultFound("Friend not found")
-
-        logging.warning(f'Friend: {friend}')
 
         return friend
 

@@ -46,7 +46,18 @@ class PostgresConfig(BaseSettings):
     @property
     def url_sync(self):
         return f'postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}'
-        # return 'postgresql+psycopg2://app:123qwe@localhost:5432/postgres'
+
+    @property
+    def url_async(self):
+        return f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}'
+
+
+class PostgresAuthConfig(BaseSettings):
+    host: str = Field(..., env='POSTGRES_HOST_AUTH')
+    port: int = Field(..., env='POSTGRES_PORT_AUTH')
+    user: str = Field(..., env='POSTGRES_USER_AUTH')
+    password: str = Field(..., env='POSTGRES_PASSWORD_AUTH')
+    name: str = Field(..., env='POSTGRES_DB_AUTH')
 
     @property
     def url_async(self):
@@ -56,3 +67,4 @@ class PostgresConfig(BaseSettings):
 app_config = AppConfig()  # type: ignore[call-arg]
 auth_config = AuthConfig()  # type: ignore[call-arg]
 pg_config = PostgresConfig()  # type: ignore[call-arg]
+pg_auth_config = PostgresAuthConfig()  # type: ignore[call-arg]
