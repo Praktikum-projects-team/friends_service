@@ -1,7 +1,7 @@
 import logging
 
 from sqlalchemy import delete
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.future import select
 from sqlalchemy.orm import exc as orm_exc
@@ -31,7 +31,6 @@ async def insert_friend_db(friends_data: FriendsData, session):
     except IntegrityError:
         session.rollback()
         logging.warning('Friend already exists')
-        # raise IntegrityError
         raise UserAlreadyExists('Friend already exists')
 
     except Exception as e:
@@ -50,9 +49,6 @@ async def delete_friend_db(friends_data: FriendsData, session):
         await session.commit()
         return True
 
-    except orm_exc.NoResultFound:
-        return None
-
     except Exception as e:
         logging.error(e)
         return None
@@ -70,4 +66,30 @@ async def get_all_friend_ids_for_user_db(user_id: str, session):
 
     except Exception as e:
         logging.error(e)
+        return None
+
+
+async def get_friend_by_ids(friends_data: FriendsData, session):
+    try:
+        query = select(Friends).where(
+            Friends.user_id == friends_data.user_id,
+            Friends.friend_id == friends_data.friend_id
+        )
+        logging.warning(f'friends_data: {friends_data}')
+        result = await session.execute(query)
+        friend = result.fetchone()
+
+        if friend is None:
+            raise NoResultFound("Friend not found")
+
+        logging.warning(f'Friend: {friend}')
+
+        return friend
+
+    except NoResultFound as e:
+        logging.warning(str(e))
+        return None
+
+    except Exception as e:
+        logging.error(str(e))
         return None
