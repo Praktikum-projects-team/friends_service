@@ -1,12 +1,16 @@
 import logging
 from http import HTTPStatus
+from typing import Union
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
+from starlette.responses import JSONResponse
 
 from api.v1.auth.auth_bearer import BaseJWTBearer
 from api.v1.models.friends import AllFriendsDataResp, FriendReq, FriendResp
 from services.auth import AuthApi
 from services.friends import FriendsService, get_friends_service
+from services.postgres import UserAlreadyExists
 
 router = APIRouter()
 auth_api = AuthApi()
@@ -21,14 +25,17 @@ auth_api = AuthApi()
 async def add_friend(
         data: FriendReq,
         friends_service: FriendsService = Depends(get_friends_service)
-) -> FriendResp:
+) -> Union[JSONResponse, FriendResp]:
     try:
         await friends_service.add_friend(data)
+    except UserAlreadyExists as err:
+        logging.warning('Friend already exists')
+        return JSONResponse(status_code=HTTPStatus.CONFLICT, content={'msg': 'Friend already exists'})
     except Exception as e:
         logging.error(e)
-        return FriendResp(msg="Adding friend is failed")
+        return FriendResp(msg='Adding friend is failed')
 
-    return FriendResp(msg="Friend added")
+    return FriendResp(msg='Friend added')
 
 
 @router.delete(
@@ -42,15 +49,15 @@ async def delete_friend(
         token: str = Depends(BaseJWTBearer()),
         friends_service: FriendsService = Depends(get_friends_service)
 ) -> FriendResp:
-    print()
-    print(f'token: {token}')
-    print()
+
+    logging.warning(f'token: {token}')
+
     friend = await friends_service.delete_friend(token=token, friend_id=friend_id)
 
     if not friend:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Friend not found')
 
-    return FriendResp(msg="Friend deleted")
+    return FriendResp(msg='Friend deleted')
 
 
 @router.get(

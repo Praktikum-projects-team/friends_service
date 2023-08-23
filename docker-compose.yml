@@ -11,6 +11,8 @@ services:
     restart: always
     networks:
       - cinema
+    ports:
+      - "5433:5432"
 
   auth_redis:
     container_name: auth_redis

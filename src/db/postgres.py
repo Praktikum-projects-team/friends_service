@@ -9,6 +9,7 @@ from sqlalchemy.orm import exc as orm_exc
 from core.config import pg_config
 from db.models_data import FriendsData
 from db.models_pg import Friends
+from services.postgres import UserAlreadyExists
 
 async_engine = create_async_engine(pg_config.url_async)
 
@@ -27,15 +28,16 @@ async def insert_friend_db(friends_data: FriendsData, session):
         logging.info(f'friend.id: {friend.id}')
         return friend.id
 
-    except IntegrityError as e:
+    except IntegrityError:
         session.rollback()
-        logging.info('Friend already exists')
-        return None
+        logging.warning('Friend already exists')
+        # raise IntegrityError
+        raise UserAlreadyExists('Friend already exists')
 
     except Exception as e:
         session.rollback()
         logging.error(e)
-        return None
+        raise e
 
 
 async def delete_friend_db(friends_data: FriendsData, session):
@@ -61,8 +63,8 @@ async def get_all_friend_ids_for_user_db(user_id: str, session):
         query = select(Friends.friend_id).where(Friends.user_id == user_id)
         friends = await session.execute(query).fetchall()
         friend_ids = [friend[0] for friend in friends]
-        print()
-        print(f'friend_ids: {friend_ids}')
+
+        logging.warning(f'friend_ids: {friend_ids}')
 
         return friend_ids
 
