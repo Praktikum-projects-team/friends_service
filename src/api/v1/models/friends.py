@@ -15,6 +15,7 @@ class FriendResp(OrjsonBaseModel):
 
 
 class FriendDataResp(OrjsonBaseModel):
+    id: str
     login: str
     name: str
 

@@ -59,6 +59,7 @@ class FriendsService:
                 # friend_info = await get_auth_api().get_user_info(friend_id)
                 friend_info = await get_friend_data(friend_id)
                 friend_info_for_resp = {
+                    'id': friend_id,
                     'login': friend_info[0],
                     'name': friend_info[1],
                 }
